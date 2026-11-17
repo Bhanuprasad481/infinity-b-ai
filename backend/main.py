@@ -16,14 +16,14 @@ from google import genai
 BASE_DIR = Path(__file__).resolve().parent
 PROJECT_DIR = BASE_DIR.parent
 
+# Local development: load prompt.env if available.
+# Render deployment: reads environment variables from Render.
 load_dotenv(PROJECT_DIR / "prompt.env")
 
 API_KEY = os.getenv("GEMINI_API_KEY")
 
 if not API_KEY:
-    raise ValueError(
-        "GEMINI_API_KEY not found in project root prompt.env"
-    )
+    raise ValueError("GEMINI_API_KEY environment variable is missing")
 
 
 # ==========================================
@@ -40,7 +40,7 @@ MODEL = "gemini-3.5-flash-lite"
 # ==========================================
 
 SYSTEM_PROMPT = """
-You are Bhanu AI, a helpful personal AI assistant.
+You are Infinity B AI, a helpful personal AI assistant.
 
 Rules:
 1. Give clear and accurate answers.
@@ -57,8 +57,8 @@ Rules:
 # ==========================================
 
 app = FastAPI(
-    title="Bhanu AI Chatbot API",
-    description="Backend API for Bhanu AI",
+    title="Infinity B AI API",
+    description="Backend API for Infinity B AI chatbot",
     version="1.0.0"
 )
 
@@ -67,16 +67,23 @@ app = FastAPI(
 # 5. CORS CONFIGURATION
 # ==========================================
 
+frontend_url = os.getenv("FRONTEND_URL", "").strip()
+
+allowed_origins = [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "http://localhost:5175",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:5174",
+    "http://127.0.0.1:5175",
+]
+
+if frontend_url:
+    allowed_origins.append(frontend_url)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175",
-    ],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -99,19 +106,30 @@ class ChatRequest(BaseModel):
 @app.get("/")
 def home():
     return {
-        "message": "Bhanu AI Backend is running!",
+        "message": "Infinity B AI Backend is running!",
         "status": "success"
     }
 
 
 # ==========================================
-# 8. CHAT API
+# 8. HEALTH CHECK
+# ==========================================
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "message": "Infinity B AI Backend is healthy"
+    }
+
+
+# ==========================================
+# 9. CHAT API
 # ==========================================
 
 @app.post("/chat")
 def chat(request: ChatRequest):
 
-    # Validate empty messages
     if not request.message.strip():
         raise HTTPException(
             status_code=400,
@@ -119,20 +137,17 @@ def chat(request: ChatRequest):
         )
 
     try:
-        # Gemini API request
         args = {
             "model": MODEL,
             "system_instruction": SYSTEM_PROMPT,
             "input": request.message
         }
 
-        # Continue previous conversation if available
         if request.previous_interaction_id:
             args["previous_interaction_id"] = (
                 request.previous_interaction_id
             )
 
-        # Generate Gemini response
         interaction = client.interactions.create(**args)
 
         reply = interaction.output_text
@@ -158,7 +173,3 @@ def chat(request: ChatRequest):
             status_code=500,
             detail="Unable to generate response. Please try again."
         )
-
-@app.get("/")
-def health_check():
-    return {"status": "ok", "message": "Backend is running"}
