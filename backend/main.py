@@ -76,9 +76,12 @@ allowed_origins = [
     "http://127.0.0.1:5173",
     "http://127.0.0.1:5174",
     "http://127.0.0.1:5175",
+
+    # Production Vercel frontend
+    "https://infinity-b-ai.vercel.app",
 ]
 
-if frontend_url:
+if frontend_url and frontend_url not in allowed_origins:
     allowed_origins.append(frontend_url)
 
 app.add_middleware(
