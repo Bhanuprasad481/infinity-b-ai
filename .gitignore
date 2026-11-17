@@ -1,0 +1,65 @@
+
+# =========================================
+# API KEYS AND SECRETS
+# =========================================
+
+prompt.env
+.env
+.env.*
+!.env.example
+
+# =========================================
+# PYTHON BACKEND
+# =========================================
+
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# =========================================
+# NODE.JS AND REACT FRONTEND
+# =========================================
+
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# =========================================
+# LOGS
+# =========================================
+
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =========================================
+# EDITORS
+# =========================================
+
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# =========================================
+# SYSTEM FILES
+# =========================================
+
+.DS_Store
+Thumbs.db
