@@ -1,7 +1,15 @@
+
 import { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "./App.css";
+
+// Production backend URL
+// Vercel environment variable takes priority.
+const API_BASE_URL = (
+  import.meta.env.VITE_API_BASE_URL ||
+  "https://infinity-b-ai.onrender.com"
+).replace(/\/+$/, "");
 
 function getSavedChats() {
   try {
@@ -22,7 +30,6 @@ function App() {
 
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
-
   const abortControllerRef = useRef(null);
 
   const [theme, setTheme] = useState(() => {
@@ -32,8 +39,6 @@ function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chatSearch, setChatSearch] = useState("");
   const [copiedMessageId, setCopiedMessageId] = useState(null);
-
-  // Backend connection status
   const [connectionStatus, setConnectionStatus] = useState("checking");
 
   const currentChat = chats.find(
@@ -42,24 +47,20 @@ function App() {
 
   const messages = currentChat?.messages || [];
 
-  // Filter chat history by conversation title
   const filteredChats = chats.filter((chat) =>
     (chat.title || "")
       .toLowerCase()
       .includes(chatSearch.trim().toLowerCase())
   );
 
-  // Save chat history
   useEffect(() => {
     localStorage.setItem("bhanu-ai-chats", JSON.stringify(chats));
   }, [chats]);
 
-  // Save theme
   useEffect(() => {
     localStorage.setItem("bhanu-ai-theme", theme);
   }, [theme]);
 
-  // Close sidebar using Escape key
   useEffect(() => {
     const handleEscape = (event) => {
       if (event.key === "Escape") {
@@ -86,13 +87,10 @@ function App() {
       }, 5000);
 
       try {
-        const response = await fetch(
-          "http://127.0.0.1:8000/",
-          {
-            method: "GET",
-            signal: controller.signal,
-          }
-        );
+        const response = await fetch(`${API_BASE_URL}/`, {
+          method: "GET",
+          signal: controller.signal,
+        });
 
         if (!response.ok) {
           throw new Error("Backend unavailable");
@@ -188,20 +186,17 @@ function App() {
 
   // Send request to Gemini backend
   const requestGemini = async (userMessage, previousId, signal) => {
-    const response = await fetch(
-      "http://127.0.0.1:8000/chat",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          previous_interaction_id: previousId,
-        }),
-        signal,
-      }
-    );
+    const response = await fetch(`${API_BASE_URL}/chat`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        message: userMessage,
+        previous_interaction_id: previousId,
+      }),
+      signal,
+    });
 
     let data;
 
@@ -273,7 +268,6 @@ function App() {
       previousId: null,
     };
 
-    // Save user message with its previous interaction ID
     setChats((prev) => {
       const existing = prev.find((chat) => chat.id === chatId);
 
@@ -400,7 +394,6 @@ function App() {
 
     const assistantMessage = chat.messages[assistantIndex];
 
-    // Only regenerate the latest assistant response
     if (
       assistantMessage?.role !== "assistant" ||
       assistantIndex !== chat.messages.length - 1
@@ -408,7 +401,6 @@ function App() {
       return;
     }
 
-    // Find the user question immediately before this response
     let userIndex = assistantIndex - 1;
 
     while (
@@ -422,7 +414,6 @@ function App() {
 
     const originalQuestion = chat.messages[userIndex].content;
 
-    // Use conversation context from before the original question
     const previousId =
       chat.messages[userIndex].previousInteractionId || null;
 
@@ -481,7 +472,6 @@ function App() {
 
   return (
     <div className={`app ${theme}`}>
-
       {/* Mobile overlay */}
       {sidebarOpen && (
         <button
@@ -523,7 +513,6 @@ function App() {
         <div className="history">
           <p className="history-title">CHAT HISTORY</p>
 
-          {/* Search conversations */}
           <div className="chat-search-wrapper">
             <input
               className="chat-search-input"
@@ -603,7 +592,6 @@ function App() {
 
       {/* Main Area */}
       <main className="main">
-
         {/* Topbar */}
         <header className="topbar">
           <div className="topbar-heading">
@@ -633,7 +621,6 @@ function App() {
               {theme === "dark" ? "☀️ Light Mode" : "🌙 Dark Mode"}
             </button>
 
-            {/* Export Chat */}
             {messages.length > 0 && (
               <button
                 className="export-chat-button"
@@ -645,7 +632,6 @@ function App() {
               </button>
             )}
 
-            {/* Dynamic Backend Status */}
             <span className={`status ${connectionStatus}`}>
               ●{" "}
               {connectionStatus === "connected"
@@ -743,10 +729,8 @@ function App() {
                       </ReactMarkdown>
                     </div>
 
-                    {/* Copy and Regenerate buttons */}
                     {item.role === "assistant" && (
                       <div className="response-actions">
-
                         <button
                           className="copy-response-button"
                           type="button"
@@ -781,7 +765,6 @@ function App() {
                             <span>↻</span> Regenerate
                           </button>
                         )}
-
                       </div>
                     )}
                   </div>
@@ -813,7 +796,6 @@ function App() {
               disabled={loading}
             />
 
-            {/* Send / Stop button */}
             {loading ? (
               <button
                 className="stop-button"
